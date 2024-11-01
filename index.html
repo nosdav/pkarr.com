@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DNS Control Panel</title>
+    <script
+      type="module"
+      src="https://unpkg.com/htm@3.0.4/preact/standalone.module.js"
+    ></script>
+    <style>
+      /* Custom CSS for styling components */
+      body,
+      html {
+        margin: 0;
+        padding: 0;
+        font-family: Arial, sans-serif;
+        background: linear-gradient(90deg, #2196f3, #9c27b0);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-attachment: fixed;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+      .container {
+        max-width: 960px;
+        background-color: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(4px);
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+      }
+      .header h1 {
+        font-size: 1.75rem;
+        color: #1f2937;
+      }
+      .header p {
+        color: #4b5563;
+      }
+      .table-container {
+        overflow-x: auto;
+        margin-top: 1rem;
+        -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+      }
+      th,
+      td {
+        padding: 8px;
+        text-align: left;
+        border-bottom: 1px solid #e5e7eb;
+      }
+      th {
+        background-color: #f9fafb;
+      }
+      .badge {
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 0.875rem;
+      }
+
+      /* Add these new styles */
+      .search-container {
+        position: relative;
+        max-width: 400px;
+        flex: 1;
+      }
+
+      .search-icon {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #6b7280;
+      }
+
+      input[type='search'] {
+        width: 100%;
+        padding: 8px 12px 8px 36px;
+        border: 1px solid #e5e7eb;
+        border-radius: 6px;
+      }
+
+      .actions-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+      }
+
+      .add-button {
+        background-color: #10b981;
+        color: white;
+        padding: 8px 16px;
+        border-radius: 6px;
+        border: none;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        cursor: pointer;
+      }
+
+      .add-button:hover {
+        background-color: #059669;
+      }
+
+      .badge {
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 0.875rem;
+        font-weight: 500;
+      }
+
+      .badge-A {
+        background-color: #ede9fe;
+        color: #6d28d9;
+      }
+      .badge-CNAME {
+        background-color: #d1fae5;
+        color: #047857;
+      }
+      .badge-MX {
+        background-color: #dbeafe;
+        color: #1d4ed8;
+      }
+      .badge-TXT {
+        background-color: #fef3c7;
+        color: #b45309;
+      }
+      .badge-SVCB {
+        background-color: #ffe4e6;
+        color: #be123c;
+      }
+
+      .delete-btn {
+        background: none;
+        border: none;
+        color: #6b7280;
+        cursor: pointer;
+        padding: 4px;
+        border-radius: 4px;
+      }
+
+      .delete-btn:hover {
+        color: #dc2626;
+        background-color: #f3f4f6;
+      }
+
+      .font-mono {
+        font-family: monospace;
+      }
+
+      /* Add these new responsive styles */
+      @media (max-width: 768px) {
+        .container {
+          margin: 1rem;
+          padding: 16px;
+        }
+
+        .actions-row {
+          flex-direction: column;
+          gap: 1rem;
+        }
+
+        .search-container {
+          width: 100%;
+          max-width: none;
+        }
+
+        table {
+          font-size: 0.875rem; /* Slightly smaller font on mobile */
+        }
+
+        th,
+        td {
+          padding: 6px;
+          white-space: nowrap;
+        }
+
+        .badge {
+          font-size: 0.75rem;
+          padding: 2px 6px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+
+    <script type="module">
+      import {
+        html,
+        render
+      } from 'https://unpkg.com/htm@3.0.4/preact/standalone.module.js'
+
+      const records = [
+        { type: 'A', name: '@', content: '192.0.2.1', ttl: '3600s' },
+        { type: 'CNAME', name: 'www', content: 'example.com', ttl: '3600s' },
+        {
+          type: 'MX',
+          name: '@',
+          content: 'mail.example.com',
+          ttl: '3600s',
+          priority: 10
+        },
+        {
+          type: 'TXT',
+          name: '@',
+          content: 'v=spf1 include:_spf.example.com ~all',
+          ttl: '3600s'
+        },
+        {
+          type: 'SVCB',
+          name: '_api',
+          content: 'weight=100,target=api.example.com',
+          ttl: '3600s',
+          priority: 1
+        }
+      ]
+
+      function App() {
+        return html`
+          <div class="container">
+            <div class="header">
+              <h1>DNS Control Panel</h1>
+              <p>Manage your domain records with ease</p>
+            </div>
+
+            <div class="actions-row">
+              <div class="search-container">
+                <span class="search-icon">🔍</span>
+                <input type="search" placeholder="Search records..." />
+              </div>
+              <button class="add-button">
+                <span>+</span>
+                Add Record
+              </button>
+            </div>
+
+            <div class="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Type</th>
+                    <th>Name</th>
+                    <th style="text-align: center">Priority</th>
+                    <th>Content</th>
+                    <th style="text-align: right">TTL</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${records.map(
+                    record => html`
+                      <tr>
+                        <td>
+                          <span class="badge badge-${record.type}"
+                            >${record.type}</span
+                          >
+                        </td>
+                        <td class="font-mono">${record.name}</td>
+                        <td style="text-align: center">
+                          ${record.priority !== undefined
+                            ? record.priority
+                            : '-'}
+                        </td>
+                        <td
+                          class="font-mono"
+                          style="max-width: 400px; overflow: hidden; text-overflow: ellipsis;"
+                        >
+                          ${record.content}
+                        </td>
+                        <td style="text-align: right; color: #6b7280">
+                          ${record.ttl}
+                        </td>
+                        <td>
+                          <button
+                            class="delete-btn"
+                            aria-label="Delete ${record.type} record for ${record.name}"
+                          >
+                            🗑️
+                          </button>
+                        </td>
+                      </tr>
+                    `
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        `
+      }
+
+      render(html`<${App} />`, document.getElementById('app'))
+    </script>
+  </body>
+</html>
