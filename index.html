@@ -187,6 +187,47 @@
           font-size: 0.75rem;
           padding: 2px 6px;
         }
+
+        /* New table layout for mobile */
+        table,
+        thead,
+        tbody,
+        tr,
+        th,
+        td {
+          display: block;
+        }
+
+        thead tr {
+          position: absolute;
+          top: -9999px;
+          left: -9999px;
+        }
+
+        tr {
+          margin-bottom: 1rem;
+          border: 1px solid #e5e7eb;
+          border-radius: 6px;
+          padding: 0.5rem;
+        }
+
+        td {
+          position: relative;
+          padding-left: 50%;
+          border: none;
+          text-align: right;
+          white-space: normal;
+        }
+
+        td:before {
+          position: absolute;
+          left: 0.5rem;
+          width: 45%;
+          padding-right: 10px;
+          text-align: left;
+          font-weight: bold;
+          content: attr(data-label);
+        }
       }
     </style>
   </head>
@@ -259,27 +300,29 @@
                   ${records.map(
                     record => html`
                       <tr>
-                        <td>
+                        <td data-label="Type">
                           <span class="badge badge-${record.type}"
                             >${record.type}</span
                           >
                         </td>
-                        <td class="font-mono">${record.name}</td>
-                        <td style="text-align: center">
+                        <td data-label="Name" class="font-mono">
+                          ${record.name}
+                        </td>
+                        <td data-label="Priority" style="text-align: right">
                           ${record.priority !== undefined
                             ? record.priority
                             : '-'}
                         </td>
-                        <td
-                          class="font-mono"
-                          style="max-width: 400px; overflow: hidden; text-overflow: ellipsis;"
-                        >
+                        <td data-label="Content" class="font-mono">
                           ${record.content}
                         </td>
-                        <td style="text-align: right; color: #6b7280">
+                        <td
+                          data-label="TTL"
+                          style="text-align: right; color: #6b7280"
+                        >
                           ${record.ttl}
                         </td>
-                        <td>
+                        <td data-label="Actions">
                           <button
                             class="delete-btn"
                             aria-label="Delete ${record.type} record for ${record.name}"
